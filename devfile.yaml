@@ -1,0 +1,112 @@
+apiVersion: 1.0.0
+metadata:
+  name: php-di
+projects:
+  - name: php-di
+    source:
+      location: 'https://devfile-registry-openshift-workspaces.apps.cluster-cprsm.cprsm.sandbox1243.opentlc.com/resources/php-di-php-di-master.zip'
+      type: zip
+components:
+  - id: nadim-vscode/symfony-code-snippets/latest
+    type: chePlugin
+    registryUrl: 'https://user1-che-plugin-registry-dev-qsak7.surge.sh/v3'
+  - id: redhat/php/latest
+    type: chePlugin
+  - id: redhat/php-debugger/latest
+    type: chePlugin
+  - mountSources: true
+    endpoints:
+      - name: 8080-tcp
+        port: 8000
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: composer
+        containerPath: /home/jboss/.composer
+    alias: php
+    image: 'registry.redhat.io/codeready-workspaces/stacks-php-rhel8@sha256:bb7f7ef0ce58695aaf29b3355dd9ee187a94d1d382f68f329f9664ca01772ba2'
+  - id: bmewburn/vscode-intelephense-client/latest
+    type: chePlugin
+  - endpoints:
+      - attributes:
+          discoverable: 'true'
+          public: 'false'
+        name: memcached
+        port: 11211
+    memoryLimit: 512Mi
+    type: dockerimage
+    alias: memcached
+    image: 'registry.redhat.io/rhacm2/memcached-rhel8:v2.1.10-1'
+  - endpoints:
+      - attributes:
+          discoverable: 'true'
+          public: 'false'
+        name: mariadb-workspace
+        port: 3306
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: mariadb-storage
+        containerPath: /var/lib/mysql
+    alias: mariadb
+    image: 'registry.redhat.io/rhscl/mariadb-103-rhel7@sha256:d478cf235a6462cf9ac116d08dc6b1c081ffff2b906818b1daade99fb0fdccab'
+    env:
+      - value: mariadb-workspace
+        name: DATABASE_SERVICE_NAME
+      - value: mariadb
+        name: MYSQL_USER
+      - value: mariadb
+        name: MYSQL_PASSWORD
+      - value: mariadb
+        name: MYSQL_ROOT_PASSWORD
+      - value: cluster_booking
+        name: MYSQL_DATABASE
+commands:
+  - name: 1. Install dependencies (with composer)
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/php-di'
+        type: exec
+        command: composer install
+        component: php
+  - name: 2. Index workspace (Intelephense)
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/php-di'
+        type: exec
+        command: |
+          msg="# Execute 'Intelephense: Index workspace' from Command palette (F1) to fix diagnostics #"
+          edge=$(echo "$msg" | sed 's/./#/g')
+          echo "$edge"
+          echo "$msg"
+          echo "$edge"
+        component: php
+  - name: 3. Run web application
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/php-di'
+        type: exec
+        command: 'php -S 0.0.0.0:8000 -t web/'
+        component: php
+  - name: 4. Run CLI application
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/php-di'
+        type: exec
+        command: php console.php
+        component: php
+  - name: Debug current file
+    actions:
+      - referenceContent: |
+          {
+            "version": "0.2.0",
+            "configurations": [
+              {
+                "name": "Launch currently open script",
+                "type": "php",
+                "request": "launch",
+                "program": "${file}",
+                "stopOnEntry": true,
+                "cwd": "${fileDirname}",
+                "port": 9000,
+                "runtimeExecutable": "php"
+              }
+            ]
+          }
+        type: vscode-launch
