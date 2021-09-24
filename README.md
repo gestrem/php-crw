@@ -2,6 +2,10 @@
 
 This repository demonstrates how to write a simple application using PHP-DI without any framework.
 
+# Start coding !
+
+[![Contribute](https://www.eclipse.org/che/factory-contribute.svg)](https://codeready-openshift-workspaces.apps.cluster-cprsm.cprsm.sandbox1243.opentlc.com//f?url=https://github.com/gestrem/php-crw)
+
 ## Screenshot
 
 ![](screenshot.png)
